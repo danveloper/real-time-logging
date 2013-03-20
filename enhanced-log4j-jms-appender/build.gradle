@@ -1,0 +1,45 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.2'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'nexus'
+
+sourceCompatibility=1.6
+targetCompatibility=1.6
+
+group = "com.danveloper.log4j"
+version = "0.1-SNAPSHOT"
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+ext {
+	versions = [
+		log4j: '1.2.16',
+		activeMq: '5.7.0'
+	]
+}
+
+dependencies {
+	compile "log4j:log4j:${versions.log4j}"
+	compile "org.apache.activemq:activemq-core:${versions.activeMq}"
+}
+
+artifacts {
+    archives jar
+    archives sourcesJar
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.4'
+}
