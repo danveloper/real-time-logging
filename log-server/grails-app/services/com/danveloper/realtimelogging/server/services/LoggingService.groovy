@@ -28,7 +28,7 @@ class LoggingService {
 
     /**
      * The {@link LoggingServiceActivator} delegates its messages to this method.
-     * This message, in turn, broadcasts them to the UI via the atmosphere broadcaster.
+     * This method, in turn, broadcasts them to the UI via the atmosphere broadcaster.
      *
      * @param command
      * @return
