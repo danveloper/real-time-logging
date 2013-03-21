@@ -17,8 +17,6 @@ class LoggingService {
 
     /**
      *  These two fields represent the atmosphere "config".
-     *  As you'll see from {@link #registerApplicationInstance(String, String, String) registerApplicationInstance}, we'll
-     *  need to extend the normal configuration somewhat to satisfy the need to serve as a logging endpoint for multiple applications
      */
     static final MAPPING_URI = ApplicationHolder.application.config.grails.atmosphere.mappingUri
     static atmosphere = [mapping: MAPPING_URI]
@@ -38,7 +36,6 @@ class LoggingService {
         addMessageToLogHistory(command)
         command.message = command.message
         def message = command as JSON
-        println message.toString()
         broadcaster[MAPPING_URI].broadcast(message.toString())
     }
 
