@@ -67,6 +67,7 @@ var Logging = {
                                         Logging.$channels.append(data);
                                     } catch (e) {
                                         console.log("Error appending log", e);
+                                        throw e;
                                     }
                                 }
                             });

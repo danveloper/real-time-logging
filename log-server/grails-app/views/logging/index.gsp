@@ -11,7 +11,7 @@
 
     <r:script>
         $(document).ready(function() {
-            var url = '${createLink(uri:ApplicationHolder.application.config.grails.atmosphere.mappingUri)}/all';
+            var url = '${createLink(uri:ApplicationHolder.application.config.grails.atmosphere.mappingUri)}';
             $.atmosphere.subscribe(url, Logging.router, $.atmosphere.request = {transport:'websocket', fallbackTransport:'streaming'});
 
             var initialRequest = new Object();
@@ -85,5 +85,42 @@
         <span class="message"> $<%%>{message} </span>
     </div>
 </script>
+
+<script id="atmosphere-script">
+!function($) {
+    var Atmosphere = function(url) {
+        this.url = url;
+    };
+    Atmosphere.prototype = {
+        constructor: Atmosphere,
+        toString: function() {
+            return "Atmosphere";
+        },
+        subscribe: function() {
+            $.atmosphere.subscribe(this.url, this.messageEvent, $.atmosphere.request = {transport:'websocket', fallbackTransport:'streaming'});
+        },
+        messageEvent: function(response) {
+            console.log("Message Event!", response);
+        },
+        // Fuck tha po-lice!
+        source: function() {
+            var src = "var " + this.toString() + " = " + this.constructor + ";\n";
+            src += this.toString()+".prototype = {\n\tconstructor: "+this.toString()+",\n";
+            for (var key in this.__proto__) {
+                if (!(key in ['constructor', '__proto__'])) {
+                    src += "\t"+key+": "+this[key]+",\n";
+                }
+            }
+            src += "\ttoString: "+this["toString"]+"\n};";
+            return src;
+        }
+    };
+
+    $.atmosphereExt = function(options) {
+        return new Atmosphere(options.url);
+    }
+}(window.jQuery);
+</script>
+
 </body>
 </html>

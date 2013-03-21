@@ -1,10 +1,9 @@
 package com.danveloper.realtimelogging.server.services
 
 import grails.converters.JSON
-import org.joda.time.LocalDateTime
-import com.odelia.grails.plugins.atmosphere.StratosphereServlet
-import com.odelia.grails.plugins.atmosphere.GrailsHandler
 import org.codehaus.groovy.grails.commons.ApplicationHolder
+import org.joda.time.LocalDateTime
+
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,9 +21,9 @@ class LoggingService {
      *  need to extend the normal configuration somewhat to satisfy the need to serve as a logging endpoint for multiple applications
      */
     static final MAPPING_URI = ApplicationHolder.application.config.grails.atmosphere.mappingUri
-    static atmosphere = [mapping: "$MAPPING_URI/all"]
+    static atmosphere = [mapping: MAPPING_URI]
 
-    // This will be our synchronized message deliverer, a painfully obscure lesson.
+    // This will be our lock on the message writer, a painfully obscure lesson.
     static final Object MUTEX = new Object()
 
     /**
@@ -40,7 +39,7 @@ class LoggingService {
         command.message = command.message
         def message = command as JSON
         println message.toString()
-        broadcaster["$MAPPING_URI/logchannel/${command.application}/${command.ipAddress}/${command.hostname}"].broadcast(message.toString())
+        broadcaster[MAPPING_URI].broadcast(message.toString())
     }
 
     // Add this log message to this logging instance's history reference.
@@ -69,7 +68,7 @@ class LoggingService {
         applications[appName].find { it.ipAddress == ipAddress && it.hostname == hostname }
     }
 
-    // Registering an application's logging instance either means creating a new mapping for it.
+    // Put an application's logging instance in the registry. From there we'll store history and other things.
     // If a mapping already exists, update its "latest update time" property.
     private def registerApplicationInstance(String ipAddress, String hostname, String appName) {
         if (!applications[appName]) {
@@ -79,24 +78,13 @@ class LoggingService {
         if (!existing) {
             // Register the new application and create a unique mapping for it.
             applications[appName] << [ipAddress: ipAddress, hostname: hostname, lastUpdateTime: new LocalDateTime()]
-            addAtmosphereHandler("$MAPPING_URI/logchannel/${appName}/${ipAddress}/${hostname}")
 
             // Broadcast to the default channel, letting the UI know that we have new loggers
-            broadcaster["$MAPPING_URI/all"].broadcast( (applications as JSON).toString(true) )
+            broadcaster[MAPPING_URI].broadcast( (applications as JSON).toString(true) )
         } else {
             existing.lastUpdateTime = new LocalDateTime()
         }
     }
-
-    private void addAtmosphereHandler(String mapping) {
-        // Extract the stratosphere servlet from the servlet context
-        StratosphereServlet stratosphereServlet = grailsApplication.mainContext.servletContext[com.odelia.grails.plugins.atmosphere.StratosphereServlet.ATMOSPHERE_PLUGIN_ATMOSPHERE_SERVLET]
-
-        // Register the new mapping with the stratosphere servlet, this will let the UI have a unique endpoint for each specific application logging instance
-        def atmosphereHandler = new GrailsHandler(targetService: this, servletContext: grailsApplication.mainContext.servletContext)
-        stratosphereServlet.addAtmosphereHandler(mapping, atmosphereHandler)
-    }
-
 
     /** ----------X----------- **/
     /** ----------X----------- **/
@@ -120,7 +108,7 @@ class LoggingService {
 
             // Only one message at a time, please.
             // This can cause some really funky errors if it isn't here.
-            synchronized( event.resource.response.writer ) {
+            synchronized( MUTEX ) {
                 def writer = event.resource.response.writer
 
                 writer.write event.message

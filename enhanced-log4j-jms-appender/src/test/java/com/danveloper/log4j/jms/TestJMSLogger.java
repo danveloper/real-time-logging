@@ -14,7 +14,7 @@ public class TestJMSLogger {
         new Thread() {
             public void run() {
                 while(true) {
-                    log.info("info message. dull, nothing special.");
+                    log.error("error message");
                     try {
                         Thread.sleep(2000);
                     } catch (Exception e) {
